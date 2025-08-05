@@ -1,0 +1,51 @@
+coder:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+  env:
+    - name: CODER_ACCESS_URL
+      value: "http://localhost:3000"
+    - name: CODER_WILDCARD_ACCESS_URL
+      value: "*.localhost:3000"
+    - name: CODER_PG_CONNECTION_URL
+      value: "postgresql://coder:coder@postgres-postgresql.coder.svc.cluster.local:5432/coder?sslmode=disable"
+  resources:
+    requests:
+      cpu: 100m      # Reduced from 250m
+      memory: 256Mi  # Reduced from 512Mi
+    limits:
+      cpu: 500m      # Reduced from 1000m
+      memory: 1Gi    # Reduced from 2Gi
+
+  readinessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+  
+  livenessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 5
+
+extraTemplates:
+  - |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: coder-permissions
+      namespace: {{ .Release.Namespace }}
+    data:
+      perms: |
+        ---
+        users:
+          admins:
+            foo@bar.com:
+              - template-1
+            mick.mouse@nodomain.com:
+              - template-1
+              - template-2
+          group-1:
+            mick.mouse@nodomain.com:
+              - template-1
+            iron.man@nodomain.com:
+              - template-1
